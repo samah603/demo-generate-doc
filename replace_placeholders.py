@@ -8,6 +8,7 @@ doc = Document("WI_VDOOTTHUB_Deployment_template.docx")
 tag_version = os.getenv("GITHUB_REF_NAME", "vX.Y.Z")
 commit_message = os.getenv("GITHUB_HEAD_COMMIT_MESSAGE", "Auto-generated commit")
 repo_name = os.getenv("GITHUB_REPOSITORY", "unknown-repo").split("/")[-1]
+changelog_text = os.getenv("CHANGELOG_BODY", "No changes listed.")
 
 def is_drawing_run(run):
     return bool(run._element.xpath(".//w:drawing | .//w:pict"))
@@ -22,6 +23,7 @@ def replace_in_runs(paragraph):
         text = text.replace("{{TAGVERSION}}", tag_version)
         text = text.replace("{{PRMESSAGE}}", commit_message)
         text = text.replace("{{REPONAME}}", repo_name)
+        text = text.replace("{{CHANGELOG}}", changelog_text)
         run.text = text
 
 # main document paragraphs
