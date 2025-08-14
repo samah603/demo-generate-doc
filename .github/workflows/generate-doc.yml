@@ -45,6 +45,7 @@ jobs:
       # CORRECTED: The python script is at the root of the checked-out central repo folder.
       - name: Replace placeholders in Word template
         run: |
+          git status
           ls -la ${{ github.workspace }}/.central-workflow-files/
           python ${{ github.workspace }}/.central-workflow-files/replace_placeholders.py
         env:
