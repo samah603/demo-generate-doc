@@ -42,10 +42,9 @@ jobs:
         run: pip install python-docx
 
       # Step 5: Run the Python script to generate the document
-      # Using the absolute path with ${{ github.workspace }} is more reliable and prevents "file not found" errors.
+      # CORRECTED: The python script is at the root of the checked-out central repo folder.
       - name: Replace placeholders in Word template
         run: |
-          ls -la ${{ github.workspace }}/.central-workflow-files/
           python ${{ github.workspace }}/.central-workflow-files/replace_placeholders.py
         env:
           # Pass inputs and other variables to the Python script as environment variables
