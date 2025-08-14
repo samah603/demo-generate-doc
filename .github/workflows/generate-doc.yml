@@ -6,7 +6,7 @@ on:
     # Define inputs that this workflow accepts
     inputs:
       version:
-        description: 'The version tag being released'
+        description: 'The version tag being released, e.g., 2025.08.14'
         required: true
         type: string
     # Define secrets this workflow needs
@@ -20,16 +20,16 @@ jobs:
   build-and-release:
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Checkout the code of the CALLER repository (where the release happens)
+      # Step 1: Checkout the code of the Caller repository
       - name: Checkout Caller's Repository Code
         uses: actions/checkout@v4
 
-      # Step 2: Checkout THIS repository (the central one) to get access to its files
+      # Step 2: Checkout this Central repository to get necessary files
       - name: Checkout Central Repo to Get Template/Script
         uses: actions/checkout@v4
         with:
+          # Check out this repository's code into a specific folder
           repository: samah603/demo-generate-doc
-          # This checks out 'samah603/demo-generate-doc' into a specific folder
           path: '.central-workflow-files'
 
       # Step 3: Set up Python environment
@@ -38,39 +38,55 @@ jobs:
         with:
           python-version: '3.x'
 
-      # Step 4: Install Python dependencies
+      # Step 4: Cache pip dependencies to speed up subsequent runs
+      - name: Cache pip dependencies
+        id: cache-pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('.central-workflow-files/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      # Step 5: Install Python dependencies
       - name: Install dependencies
         run: pip install python-docx
 
-      # Step 5: Run the Python script to generate the document
+      # Step 6: Run the Python script to generate the document
       - name: Replace placeholders in Word template
         # Set the working directory so the script can find its template file
         working-directory: ./.central-workflow-files
         run: |
           python replace_placeholders.py
         env:
-          # Pass inputs and other variables to the Python script as environment variables
+          # Pass variables to the Python script
           TAG_VERSION: ${{ inputs.version }}
-          GITHUB_REPOSITORY: ${{ github.repository }} # This will be the caller's repo name
+          GITHUB_REPOSITORY: ${{ github.repository }} # This is the caller's repo name
 
-      # Step 6: Extract repository name from the CALLER repo ('github.repository')
-      - name: Extract repository name
-        id: get_repo_name
-        run: echo "name=$(echo '${{ github.repository }}' | cut -d'/' -f2 | cut -d'-' -f3-)" >> $GITHUB_OUTPUT
+      # Step 7: Prepare variables for the filename
+      - name: Prepare filename variables
+        id: vars
+        run: |
+          # Extracts 'name-service' from 'org/vdo-ott-name-service'
+          repo_name=$(echo '${{ github.repository }}' | cut -d'/' -f2 | cut -d'-' -f3-)
+          # Removes dots from the date tag, e.g., '2025.08.14' -> '20250814'
+          date_nodots=$(echo '${{ inputs.version }}' | tr -d '.')
+          echo "repo_name=$repo_name" >> $GITHUB_OUTPUT
+          echo "date_nodots=$date_nodots" >> $GITHUB_OUTPUT
 
-      # Step 7: Rename the generated file to include the repository name
+      # Step 8: Rename the generated document
       - name: Rename document for release
         run: |
-          # The source file is now inside the subdirectory, so we adjust the path
-          mv ./.central-workflow-files/WI_VDOOTTHUB_Deployment_${{ inputs.version }}.docx ./WI_VDOOTTHUB_Deployment_${{ steps.get_repo_name.outputs.name }}_${{ inputs.version }}.docx
+          # The source file is in the subdirectory, so the path must be correct
+          mv ./.central-workflow-files/WI_VDOOTTHUB_Deployment_${{ inputs.version }}.docx ./WI_VDOOTTHUB_Deployment_${{ steps.vars.outputs.repo_name }}_${{ steps.vars.outputs.date_nodots }}.docx
 
-      # Step 8: Upload the RENAMED document to the release on the CALLER repository
+      # Step 9: Upload the renamed document to the Caller's repository release
       - name: Upload document to GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ inputs.version }}
-          # The filename now includes the dynamic repository name
-          files: WI_VDOOTTHUB_Deployment_${{ steps.get_repo_name.outputs.name }}_${{ inputs.version }}.docx
+          # The filename now includes the dynamic repo name and formatted date
+          files: WI_VDOOTTHUB_Deployment_${{ steps.vars.outputs.repo_name }}_${{ steps.vars.outputs.date_nodots }}.docx
         env:
           # Use the GITHUB_TOKEN received from the secrets block
           GITHUB_TOKEN: ${{ secrets.CALLER_TOKEN }}
