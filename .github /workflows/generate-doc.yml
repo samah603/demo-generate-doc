@@ -52,10 +52,10 @@ jobs:
           TAG_VERSION: ${{ inputs.version }}
           GITHUB_REPOSITORY: ${{ github.repository }} # This will be the caller's repo name
 
-      # Step 6: Extract repository name from the SOURCE repo ('github.workflow_repository')
+      # Step 6: Extract repository name from the CALLER repo ('github.repository')
       - name: Extract repository name
         id: get_repo_name
-        run: echo "name=$(echo '${{ github.workflow_repository }}' | cut -d'/' -f2 | cut -d'-' -f3-)" >> $GITHUB_OUTPUT
+        run: echo "name=$(echo '${{ github.repository }}' | cut -d'/' -f2 | cut -d'-' -f3-)" >> $GITHUB_OUTPUT
 
       # Step 7: Rename the generated file to include the repository name
       - name: Rename document for release
