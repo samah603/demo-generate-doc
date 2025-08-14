@@ -11,8 +11,9 @@ on:
         type: string
     # Define secrets this workflow needs
     secrets:
-      # Expect the standard GITHUB_TOKEN, which is passed via 'secrets: inherit'
-      caller_token:
+      # Expect the standard GITHUB_TOKEN, which is passed via 'secrets: inherit' from the caller.
+      # This is the recommended practice.
+      CALLER_TOKEN:
         required: true
 
 jobs:
@@ -20,16 +21,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Step 1: Checkout the code of the CALLER repository (where the release happens)
-      # This is done automatically by GitHub when using a reusable workflow.
       - name: Checkout Caller's Repository Code
         uses: actions/checkout@v4
 
       # Step 2: Checkout THIS repository (the central one) to get access to its files
-      # (template, python script, etc.)
       - name: Checkout Central Repo to Get Template/Script
         uses: actions/checkout@v4
         with:
-          # This checks out 'samah603/demo-generate-doc' into the specified folder
+          # This checks out 'samah603/demo-generate-doc' into a specific folder
           path: '.central-workflow-files'
 
       # Step 3: Set up Python environment
@@ -43,10 +42,10 @@ jobs:
         run: pip install python-docx
 
       # Step 5: Run the Python script to generate the document
-      # The script will save the file with its original name for now
+      # Using the absolute path with ${{ github.workspace }} is more reliable and prevents "file not found" errors.
       - name: Replace placeholders in Word template
         run: |
-          python .central-workflow-files/replace_placeholders.py
+          python ${{ github.workspace }}/.central-workflow-files/replace_placeholders.py
         env:
           # Pass inputs and other variables to the Python script as environment variables
           TAG_VERSION: ${{ inputs.version }}
@@ -70,5 +69,5 @@ jobs:
           # The filename now includes the dynamic repository name
           files: WI_VDOOTTHUB_Deployment_${{ steps.get_repo_name.outputs.name }}_${{ inputs.version }}.docx
         env:
-          # Use the GITHUB_TOKEN received from the secrets
+          # Use the GITHUB_TOKEN received from the secrets block
           GITHUB_TOKEN: ${{ secrets.CALLER_TOKEN }}
