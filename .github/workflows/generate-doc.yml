@@ -30,6 +30,7 @@ jobs:
         with:
           # Check out this repository's code into a specific folder
           repository: samah603/demo-generate-doc
+          ref: demo
           path: '.central-workflow-files'
 
       # Step 3: Set up Python environment
