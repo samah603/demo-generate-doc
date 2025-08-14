@@ -43,12 +43,11 @@ jobs:
         run: pip install python-docx
 
       # Step 5: Run the Python script to generate the document
-      # CORRECTED: The python script is at the root of the checked-out central repo folder.
       - name: Replace placeholders in Word template
+        # Set the working directory so the script can find its template file
+        working-directory: ./.central-workflow-files
         run: |
-          git status
-          ls -la ${{ github.workspace }}/.central-workflow-files/
-          python ${{ github.workspace }}/.central-workflow-files/replace_placeholders.py
+          python replace_placeholders.py
         env:
           # Pass inputs and other variables to the Python script as environment variables
           TAG_VERSION: ${{ inputs.version }}
@@ -62,7 +61,8 @@ jobs:
       # Step 7: Rename the generated file to include the repository name
       - name: Rename document for release
         run: |
-          mv WI_VDOOTTHUB_Deployment_${{ inputs.version }}.docx WI_VDOOTTHUB_Deployment_${{ steps.get_repo_name.outputs.name }}_${{ inputs.version }}.docx
+          # The source file is now inside the subdirectory, so we adjust the path
+          mv ./.central-workflow-files/WI_VDOOTTHUB_Deployment_${{ inputs.version }}.docx ./WI_VDOOTTHUB_Deployment_${{ steps.get_repo_name.outputs.name }}_${{ inputs.version }}.docx
 
       # Step 8: Upload the RENAMED document to the release on the CALLER repository
       - name: Upload document to GitHub Release
