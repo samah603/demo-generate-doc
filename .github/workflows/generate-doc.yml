@@ -9,6 +9,11 @@ on:
         description: 'The version tag being released, e.g., 2025.08.14'
         required: true
         type: string
+      changelog:
+        description: 'The release notes/changelog body'
+        required: false
+        type: string
+        default: 'No changes listed.'
     # Define secrets this workflow needs
     secrets:
       # Expect the standard GITHUB_TOKEN, which is passed via 'secrets: inherit' from the caller.
