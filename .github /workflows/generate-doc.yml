@@ -43,7 +43,7 @@ jobs:
         run: pip install python-docx
 
       # Step 5: Run the Python script to generate the document
-      # Note the paths now correctly point to the files checked out in Step 2
+      # The script will save the file with its original name for now
       - name: Replace placeholders in Word template
         run: |
           python .central-workflow-files/replace_placeholders.py
@@ -52,13 +52,23 @@ jobs:
           TAG_VERSION: ${{ inputs.version }}
           GITHUB_REPOSITORY: ${{ github.repository }} # This will be the caller's repo name
 
-      # Step 6: Upload the generated document to the release on the CALLER repository
+      # Step 6: Extract repository name from the SOURCE repo ('github.workflow_repository')
+      - name: Extract repository name
+        id: get_repo_name
+        run: echo "name=$(echo '${{ github.workflow_repository }}' | cut -d'/' -f2 | cut -d'-' -f3-)" >> $GITHUB_OUTPUT
+
+      # Step 7: Rename the generated file to include the repository name
+      - name: Rename document for release
+        run: |
+          mv WI_VDOOTTHUB_Deployment_${{ inputs.version }}.docx WI_VDOOTTHUB_Deployment_${{ steps.get_repo_name.outputs.name }}_${{ inputs.version }}.docx
+
+      # Step 8: Upload the RENAMED document to the release on the CALLER repository
       - name: Upload document to GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ inputs.version }}
-          # The output filename must match what the Python script generates
-          files: WI_VDOOTTHUB_Deployment_${{ inputs.version }}.docx
+          # The filename now includes the dynamic repository name
+          files: WI_VDOOTTHUB_Deployment_${{ steps.get_repo_name.outputs.name }}_${{ inputs.version }}.docx
         env:
           # Use the GITHUB_TOKEN received from the secrets
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
