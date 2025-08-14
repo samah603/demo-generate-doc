@@ -67,8 +67,8 @@ jobs:
       - name: Prepare filename variables
         id: vars
         run: |
-          # Extracts 'name-service' from 'org/vdo-ott-name-service'
-          repo_name=$(echo '${{ github.repository }}' | cut -d'/' -f2 | cut -d'-' -f3-)
+          # Extracts the repo name, removes the prefix, and replaces hyphens with underscores
+          repo_name=$(echo '${{ github.repository }}' | cut -d'/' -f2 | sed 's/^vdo-ott-//' | tr '-' '_')
           # Removes dots from the date tag, e.g., '2025.08.14' -> '20250814'
           date_nodots=$(echo '${{ inputs.version }}' | tr -d '.')
           echo "repo_name=$repo_name" >> $GITHUB_OUTPUT
