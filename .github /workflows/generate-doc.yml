@@ -1,0 +1,62 @@
+name: Reusable - Generate Deployment Document
+
+# ทำให้ Workflow นี้สามารถถูกเรียกจากภายนอกได้
+on:
+  workflow_call:
+    # กำหนด Parameter ที่จะรับค่าจากข้างนอก
+    inputs:
+      version:
+        description: 'The version tag being released'
+        required: true
+        type: string
+    # กำหนด secrets ที่จะรับมา
+    secrets:
+      GH_TOKEN:
+        required: true
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Checkout โค้ดของ Repo ที่ "เรียกใช้" (เช่น my-app)
+      # GitHub Actions จะทำขั้นตอนนี้ให้โดยอัตโนมัติเมื่อใช้ Reusable Workflow
+      - name: Checkout Caller's Repository Code
+        uses: actions/checkout@v4
+
+      # 2. Checkout Repo "กลาง" เพื่อดึงไฟล์ Template และสคริปต์ Python
+      - name: Checkout This Repo to Get Template/Script
+        uses: actions/checkout@v4
+        with:
+          repository: 'my-org/central-workflows' # ระบุชื่อ Repo กลาง
+          path: '.central-workflow-files'      # โหลดมาไว้ในโฟลเดอร์นี้
+
+      # 3. ตั้งค่า Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      # 4. ติดตั้ง Dependencies
+      - name: Install dependencies
+        run: pip install python-docx
+
+      # 5. รันสคริปต์ Python เพื่อสร้างเอกสาร
+      # สังเกตว่าเราต้องระบุ path ไปยังสคริปต์และ template ที่โหลดมาในขั้นตอนที่ 2
+      - name: Replace placeholders in Word template
+        run: |
+          python .central-workflow-files/scripts/replace_placeholders.py \
+            --template-path ".central-workflow-files/templates/WI_VDOOTTHUB_Deployment_template.docx" \
+            --version ${{ inputs.version }}
+        env:
+          # ส่งค่าจาก input เข้าไปเป็น Environment Variable ให้ Python
+          TAG_VERSION: ${{ inputs.version }}
+          GITHUB_REPOSITORY: ${{ github.repository }} # Repo ที่เรียกใช้
+
+      # 6. อัปโหลดเอกสารไปที่ Release ของ Repo ที่ "เรียกใช้"
+      - name: Upload document to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ inputs.version }}
+          files: WI_VDOOTTHUB_Deployment_${{ inputs.version }}.docx
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
