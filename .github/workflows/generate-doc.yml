@@ -45,7 +45,7 @@ jobs:
       # Using the absolute path with ${{ github.workspace }} is more reliable and prevents "file not found" errors.
       - name: Replace placeholders in Word template
         run: |
-          ls -la
+          ls -la ${{ github.workspace }}/.central-workflow-files/
           python ${{ github.workspace }}/.central-workflow-files/replace_placeholders.py
         env:
           # Pass inputs and other variables to the Python script as environment variables
