@@ -12,7 +12,7 @@ on:
     # Define secrets this workflow needs
     secrets:
       # Expect the standard GITHUB_TOKEN, which is passed via 'secrets: inherit'
-      GITHUB_TOKEN:
+      caller_token:
         required: true
 
 jobs:
@@ -71,4 +71,4 @@ jobs:
           files: WI_VDOOTTHUB_Deployment_${{ steps.get_repo_name.outputs.name }}_${{ inputs.version }}.docx
         env:
           # Use the GITHUB_TOKEN received from the secrets
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.CALLER_TOKEN }}
